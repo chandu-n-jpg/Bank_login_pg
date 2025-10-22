@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SIMULATION: Bank Reward Demo (Training Only) — Single Entry</title>
+<style>
+  :root{
+    --bg:#071126; --card:#0f2a4a; --accent:#d4af37; --text:#eaf4ff; --muted:#9fb0c8;
+    --radius:12px;
+  }
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#051029,#071126);min-height:100vh;margin:0;color:var(--text);display:flex;align-items:center;justify-content:center;padding:24px}
+  .wrap{width:980px;max-width:96%;display:grid;grid-template-columns:1fr 420px;gap:24px;align-items:start}
+  .left{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:28px;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.03)}
+  .right{background:var(--card);padding:22px;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.02)}
+  h1,h2{margin:0 0 8px}
+  p{color:var(--muted)}
+  .banks{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+  .bank{padding:12px 18px;border-radius:10px;background:rgba(255,255,255,0.02);cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+  .bank.selected{outline:3px solid rgba(212,175,55,0.12);box-shadow:0 8px 20px rgba(0,0,0,0.6);border-color:rgba(212,175,55,0.15)}
+  .btn{background:linear-gradient(90deg,var(--accent),#b5882e);color:#052033;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+  .muted{color:var(--muted);font-size:13px}
+  .page{display:none}
+  .page.active{display:block}
+  label{display:block;margin-top:12px;color:var(--muted);font-size:13px}
+  input{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--text);margin-top:6px}
+  .small{font-size:12px;color:#ffdca6;margin-top:10px}
+  .footer{margin-top:18px;color:var(--muted);font-size:13px}
+  .danger{color:#ff9b9b;font-size:13px;margin-top:8px}
+  @media (max-width:920px){.wrap{grid-template-columns:1fr;}.right{order:-1}}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.02)}
+</style>
+</head>
+<body>
+  <div class="wrap" role="main" aria-labelledby="title">
+    <div class="left" id="panelLeft">
+      <h1 id="title">SIMULATION: Bank Reward Flow (Single Saved Entry)</h1>
+      <p>This is a <strong>training/demo</strong> flow only. <span style="color:#ffdca6">Do not</span> enter real bank account numbers, PINs, OTPs or passwords. The demo saves only the <em>most recent</em> submission locally and allows a CSV download for that entry.</p>
+
+      <!-- PAGE 1: Choose bank -->
+      <div class="page active" id="page1">
+        <h2>Step 1 — Choose a bank / UPI method</h2>
+        <p class="muted">Select one of the options below to proceed to the simulated form.</p>
+        <div class="banks" id="bankList" aria-label="Bank options">
+          <div class="bank" data-bank="SBI">SBI</div>
+          <div class="bank" data-bank="ICICI">ICICI</div>
+          <div class="bank" data-bank="HDFC">HDFC</div>
+          <div class="bank" data-bank="UPI">UPI</div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn" id="toPage2" disabled>Continue</button>
+          <div class="footer">This flow is simulated. For authorized phishing simulations only, get written approval from stakeholders.</div>
+        </div>
+      </div>
+
+      <!-- PAGE 2: Collect non-sensitive demo info -->
+      <div class="page" id="page2">
+        <h2>Step 2 — Enter your demo details</h2>
+        <p class="muted">Enter <strong>non-sensitive</strong> demo information. These fields are safe for training: name, employee/roll ID, contact email, and a simulation code.</p>
+
+        <label for="demoName">Full name (demo)</label>
+        <input id="demoName" placeholder="Jane Doe (demo only)">
+
+        <label for="demoId">Employee / Student ID (demo)</label>
+        <input id="demoId" placeholder="e.g., EMP12345">
+
+        <label for="demoEmail">Contact email (for results)</label>
+        <input id="demoEmail" placeholder="your@domain.com">
+
+        <label for="simCode">Simulation code</label>
+        <input id="simCode" placeholder="SIM-2025-01">
+
+        <div style="margin-top:14px;display:flex;gap:12px;">
+          <button class="btn" id="backTo1">Back</button>
+          <button class="btn" id="toPage3">Proceed to Confirmation</button>
+        </div>
+
+        <div class="danger" aria-live="polite" id="warn">Reminder: Do not enter real bank account details, card numbers, PINs, or OTPs into this demo.</div>
+      </div>
+
+      <!-- PAGE 3: Confirmation & simulated reward -->
+      <div class="page" id="page3">
+        <h2>Step 3 — Confirmation</h2>
+        <p class="muted">Review your inputs below. This is a <strong>training simulation</strong>.</p>
+
+        <div style="margin-top:12px">
+          <div><strong>Selected option:</strong> <span id="confBank"></span></div>
+          <div style="margin-top:6px"><strong>Name (demo):</strong> <span id="confName"></span></div>
+          <div style="margin-top:6px"><strong>ID (demo):</strong> <span id="confId"></span></div>
+          <div style="margin-top:6px"><strong>Contact email:</strong> <span id="confEmail"></span></div>
+          <div style="margin-top:6px"><strong>Simulation code:</strong> <span id="confCode"></span></div>
+        </div>
+
+        <div style="margin-top:18px;padding:14px;border-radius:10px;background:linear-gradient(90deg,#07243a, #0b2a46);border:1px solid rgba(212,175,55,0.06);">
+          <h3 style="margin:0 0 8px;color:#ffdca6">CONGRATULATIONS — SIMULATION REWARD</h3>
+          <p class="muted" style="margin:0 0 8px">You have <strong>won ₹10,000 (simulation)</strong>. This is a demonstration only. Click Submit to finalize the simulation and download a CSV of the result (only the latest entry is kept).</p>
+          <button class="btn" id="submitBtn">Submit & Download CSV</button>
+          <div class="small">Results are stored locally in your browser and offered as a CSV download; they are not transmitted anywhere.</div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button class="btn" id="backTo2">Back</button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="right" id="panelRight">
+      <h2>Latest Submission</h2>
+      <p class="muted">Only the most recent submission is saved and displayed below.</p>
+
+      <div style="margin-top:12px">
+        <table id="resultsTable">
+          <thead>
+            <tr style="text-align:left;color:var(--muted)"><th>Time</th><th>Bank</th><th>Name</th><th>ID</th><th>Email</th><th>Code</th></tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:12px">
+        <button class="btn" id="downloadAll" title="Download the latest result as CSV">Download CSV (latest)</button>
+        <button class="btn" id="clearAll" style="background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)">Clear Stored</button>
+      </div>
+
+      <div class="footer" style="margin-top:12px">
+        This is a training demo. For a real system use secure backend storage, encrypted channels (TLS), strong authentication, and follow privacy laws.
+      </div>
+    </div>
+  </div>
+
+<script>
+/* Demo-only client-side logic.
+   Behaviour change requested: each submission will overwrite previous stored result,
+   so only the latest entry remains in storage. */
+
+const pages = {1: document.getElementById('page1'), 2: document.getElementById('page2'), 3: document.getElementById('page3')};
+function showPage(n){
+  Object.values(pages).forEach(p => p.classList.remove('active'));
+  pages[n].classList.add('active');
+}
+let chosenBank = null;
+const bankEls = document.querySelectorAll('.bank');
+const toPage2Btn = document.getElementById('toPage2');
+
+bankEls.forEach(el=>{
+  el.addEventListener('click', () => {
+    bankEls.forEach(b=>b.classList.remove('selected'));
+    el.classList.add('selected');
+    chosenBank = el.dataset.bank;
+    toPage2Btn.disabled = false;
+  });
+});
+
+document.getElementById('toPage2').addEventListener('click', ()=> showPage(2));
+document.getElementById('backTo1').addEventListener('click', ()=> showPage(1));
+document.getElementById('toPage3').addEventListener('click', ()=>{
+  const name = document.getElementById('demoName').value.trim();
+  const id = document.getElementById('demoId').value.trim();
+  const email = document.getElementById('demoEmail').value.trim();
+  if(!name || !id || !email){ alert('Please complete all demo fields before continuing.'); return; }
+  document.getElementById('confBank').textContent = chosenBank || '—';
+  document.getElementById('confName').textContent = name;
+  document.getElementById('confId').textContent = id;
+  document.getElementById('confEmail').textContent = email;
+  document.getElementById('confCode').textContent = document.getElementById('simCode').value.trim() || '—';
+  showPage(3);
+});
+document.getElementById('backTo2').addEventListener('click', ()=> showPage(2));
+
+// Storage key
+const STORAGE_KEY = 'sim_latest_result';
+
+// Save only the current row (overwrite previous)
+function saveLatest(row){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(row)); // overwrite
+  renderLatest();
+}
+function loadLatest(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+function clearLatest(){ localStorage.removeItem(STORAGE_KEY); renderLatest(); }
+
+// render latest single-row table
+function renderLatest(){
+  const body = document.getElementById('resultsBody');
+  body.innerHTML = '';
+  const r = loadLatest();
+  if(!r){
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="6" style="color:var(--muted);padding:10px">No submission yet.</td>';
+    body.appendChild(tr);
+    return;
+  }
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${r.time}</td><td>${r.bank}</td><td>${r.name}</td><td>${r.id}</td><td>${r.email}</td><td>${r.code}</td>`;
+  body.appendChild(tr);
+}
+
+// CSV download of the latest single row
+function downloadCSVRow(row, filename='latest_simulation_result.csv'){
+  if(!row){ alert('No result to download'); return; }
+  const header = ['Time','Bank','Name','ID','Email','Code'];
+  const line = [row.time,row.bank,row.name,row.id,row.email,row.code].map(f => `"${String(f).replace(/"/g,'""')}"`).join(',');
+  const csv = header.join(',') + '\r\n' + line;
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+// Submit: overwrite previous entry with current and download CSV
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('demoName').value.trim();
+  const id = document.getElementById('demoId').value.trim();
+  const email = document.getElementById('demoEmail').value.trim();
+  const code = document.getElementById('simCode').value.trim() || '';
+  const bank = chosenBank || '—';
+  const now = new Date().toLocaleString();
+  if(!name || !id || !email){ alert('Missing demo info.'); return; }
+  const row = {time: now, bank, name, id, email, code};
+  // Save only latest (overwrite)
+  saveLatest(row);
+  // Offer download for that single submission
+  downloadCSVRow(row, 'latest_simulation_result.csv');
+  alert('Simulation submitted. The latest result has been saved (previous data cleared).');
+  showPage(1);
+  // reset UI for next run
+  bankEls.forEach(b=>b.classList.remove('selected')); chosenBank=null; toPage2Btn.disabled=true;
+  document.getElementById('demoName').value=''; document.getElementById('demoId').value=''; document.getElementById('demoEmail').value=''; document.getElementById('simCode').value='';
+});
+
+// download/clear controls
+document.getElementById('downloadAll').addEventListener('click', ()=>{ const r = loadLatest(); downloadCSVRow(r); });
+document.getElementById('clearAll').addEventListener('click', ()=>{ if(confirm('Clear stored latest submission from this browser?')) clearLatest(); });
+
+// initial render
+renderLatest();
+</script>
+</body>
+</html>
